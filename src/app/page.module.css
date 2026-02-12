@@ -1,0 +1,335 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0b2d 0%, #1a1b4b 100%);
+}
+
+/* Header */
+.header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logoSection {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoIcon {
+  font-size: 2rem;
+  color: #9945ff;
+  animation: pulse-glow 2s infinite;
+}
+
+.logo h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(90deg, #9945ff, #14f195);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logoSubtitle {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 0;
+}
+
+/* Main Content */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Hero Section */
+.heroSection {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.heroTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.highlight {
+  background: linear-gradient(90deg, #9945ff, #14f195);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.heroSubtitle {
+  font-size: 1.125rem;
+  color: #aaa;
+  max-width: 600px;
+  margin: 0 auto 2rem auto;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.statNumber {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #14f195;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+/* Connection Section */
+.connectionSection {
+  max-width: 500px;
+  margin: 0 auto 3rem auto;
+}
+
+.connectCard {
+  text-align: center;
+}
+
+.connectButton {
+  background: linear-gradient(90deg, #9945ff, #14f195);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  width: 100%;
+}
+
+.connectButton:hover {
+  transform: translateY(-2px);
+}
+
+.connectNote {
+  color: #888;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+/* Eligibility Card */
+.eligibilityCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+/* Checking Animation */
+.checkingAnimation {
+  text-align: center;
+  padding: 2rem;
+}
+
+.pulseCircle {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1rem auto;
+  background: linear-gradient(90deg, #9945ff, #14f195);
+  border-radius: 50%;
+  animation: pulse-glow 1.5s infinite;
+}
+
+.checkingAnimation p {
+  color: #aaa;
+}
+
+/* Eligible Result */
+.eligibleResult {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.successIcon {
+  font-size: 3rem;
+  animation: float-up 2s infinite;
+}
+
+.resultContent h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+  color: #14f195;
+}
+
+.resultContent p {
+  color: #aaa;
+  margin: 0;
+}
+
+/* Confirm Button */
+.confirmButton {
+  background: linear-gradient(90deg, #9945ff, #14f195);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  width: 100%;
+}
+
+.confirmButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Complete State */
+.completeState {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(20, 241, 149, 0.1);
+  border: 1px solid rgba(20, 241, 149, 0.3);
+  border-radius: 12px;
+}
+
+.completeIcon {
+  font-size: 2rem;
+}
+
+.completeContent h3 {
+  margin-bottom: 0.25rem;
+  color: #14f195;
+}
+
+.completeContent p {
+  color: #aaa;
+  margin: 0;
+}
+
+.completeNote {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Info Section */
+.infoSection {
+  margin-top: 4rem;
+}
+
+.infoTitle {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.infoCard {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+}
+
+.infoNumber {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(90deg, #9945ff, #14f195);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 auto 1rem auto;
+}
+
+.infoCard h4 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.infoCard p {
+  color: #aaa;
+  margin: 0;
+}
+
+/* Footer */
+.footer {
+  margin-top: 4rem;
+  padding: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footerText {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.footerLinks {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.footerLinks a {
+  color: #888;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.footerLinks a:hover {
+  color: white;
+    }
